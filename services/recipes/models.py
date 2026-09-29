@@ -9,6 +9,35 @@ class RecipeOption(BaseModel):
     calories_approx: int
 
     def identity_text(self) -> str:
-        """Texto que identifica esta opción, para generar su embedding más adelante."""
         ingredients = ", ".join(self.key_ingredients)
         return f"{self.name}. {self.description}. Ingredientes: {ingredients}"
+
+
+class Ingredient(BaseModel):
+    name: str
+    amount: float
+    unit: str
+
+
+class Nutrition(BaseModel):
+    calories: float
+    protein_g: float
+    carbs_g: float
+    fat_g: float
+
+
+class RecipeDetail(BaseModel):
+    name: str
+    description: str
+    ingredients: list[Ingredient]
+    steps: list[str]
+    cook_time_minutes: int
+    nutrition: Nutrition
+
+    def identity_text(self) -> str:
+        ingredients = ", ".join(map(lambda i: i.name, self.ingredients))
+        return f"{self.name}. {self.description}. Ingredientes: {ingredients}"
+
+
+class SuggestRequest(BaseModel):
+    recent_products: list[str]

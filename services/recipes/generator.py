@@ -1,15 +1,14 @@
 import os
 
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
-from services.recipes.models import RecipeOption
+from services.recipes.models import RecipeDetail, RecipeOption
 from shared.errors import RecipeGenerationError
 
-load_dotenv()
+from shared.config import GEMINI_API_KEY
 
-_client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+_client = genai.Client(api_key=GEMINI_API_KEY)
 MODEL_NAME = "gemini-2.5-flash"
 
 
@@ -28,7 +27,6 @@ def generate_options(recent_products: list[str]) -> list[RecipeOption]:
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=list[RecipeOption],
-                max_output_tokens=20,
             ),
         )
     except Exception as e:
@@ -42,12 +40,30 @@ def generate_options(recent_products: list[str]) -> list[RecipeOption]:
     return response.parsed
 
 
-if __name__ == "__main__":
-    productos = ["pechuga de pollo", "arroz", "cebolla", "tomate", "leche"]
+def generate_detail(option: RecipeOption) -> RecipeDetail:
+    prompt = (
+        "Genera una receta para preparar el siguiente plato:"
+        f"{option.name}: {option.description}"
+        "Asegurate que la preparacion incluya el uso de los siguientes(pero no se limite a otros) ingredientes clave."
+        f"{', '.join(option.key_ingredients)}"
+        "Indica el tiempo de coccion y la informacion nutricional del plato preparado"
+    )
+
     try:
-        opciones = generate_options(productos)
-        for o in opciones:
-            print(o)
-            print("---")
-    except RecipeGenerationError as e:
-        print(f"Un error se presentó durante la obtención: {e}")
+        response = _client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=RecipeDetail,
+            ),
+        )
+    except Exception as e:
+        raise RecipeGenerationError(f"Falló la llamada a Gemini: {e}") from e
+
+    if response.parsed is None:
+        reason = response.candidates[0].finish_reason if response.candidates else "unknown"
+        raise RecipeGenerationError(
+            f"Gemini no devolvió opciones válidas (finish_reason={reason})"
+        )
+    return response.parsed
