@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 
 
 class RecipeOption(BaseModel):
@@ -37,7 +37,3 @@ class RecipeDetail(BaseModel):
     def identity_text(self) -> str:
         ingredients = ", ".join(map(lambda i: i.name, self.ingredients))
         return f"{self.name}. {self.description}. Ingredientes: {ingredients}"
-
-
-class SuggestRequest(BaseModel):
-    recent_products: list[str]

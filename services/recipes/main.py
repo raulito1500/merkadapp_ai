@@ -1,17 +1,16 @@
 from fastapi import FastAPI, HTTPException
 
-from services.recipes.generator import generate_options
-from services.recipes.models import RecipeOption, SuggestRequest
-from services.recipes.service import get_recipe_detail
+from services.recipes.models import RecipeOption
+from services.recipes.service import get_options, get_recipe_detail
 from shared.errors import RecipeGenerationError
 
 app = FastAPI()
 
 
-@app.post("/recipes/options")
-def options(request: SuggestRequest) -> list[RecipeOption]:
+@app.get("/recipes/options")
+def options() -> list[RecipeOption]:
     try:
-        return generate_options(request.recent_products)
+        return get_options()
     except RecipeGenerationError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
 
