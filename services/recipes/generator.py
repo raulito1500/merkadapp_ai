@@ -1,13 +1,10 @@
-from google import genai
 from google.genai import types
 
 from services.recipes.models import RecipeDetail, RecipeOption
 from shared.errors import RecipeGenerationError
 
-from shared.config import GEMINI_API_KEY, MODEL_NAME
-
-_client = genai.Client(api_key=GEMINI_API_KEY)
-
+from shared.config import MODEL_NAME
+from shared.llm import client
 
 def generate_options(recent_ingredients: str) -> list[RecipeOption]:
     prompt = (
@@ -18,7 +15,7 @@ def generate_options(recent_ingredients: str) -> list[RecipeOption]:
     )
 
     try:
-        response = _client.models.generate_content(
+        response = client.models.generate_content(
             model=MODEL_NAME,
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -49,7 +46,7 @@ def generate_detail(option: RecipeOption) -> RecipeDetail:
     )
 
     try:
-        response = _client.models.generate_content(
+        response = client.models.generate_content(
             model=MODEL_NAME,
             contents=prompt,
             config=types.GenerateContentConfig(
