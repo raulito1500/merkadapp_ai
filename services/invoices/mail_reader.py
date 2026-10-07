@@ -112,14 +112,14 @@ def parse_invoice_subject(subject: str) -> dict:
 if __name__ == "__main__":
     service = get_gmail_service()
     messages = list_invoice_messages()
-    print(f"Encontrados {len(messages)} correos con la etiqueta facturas")
 
-    primero = messages[0]
-    headers = get_message_headers(service, primero["id"])
+    target_message = messages[0]
+    headers = get_message_headers(service, target_message["id"])
     business_name = parse_invoice_subject(headers["Subject"])["business_name"]
 
     try:
-        result = run_invoice_agent(service, primero["id"], business_name)
+        result = run_invoice_agent(
+            service, target_message["id"], business_name)
         print(result)
     except Exception as e:
         print(e)

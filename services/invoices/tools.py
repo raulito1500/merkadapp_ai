@@ -9,7 +9,13 @@ submit_tool = types.Tool(
                 "supermercado o tienda de víveres, y por lo tanto debe "
                 "registrarse como una compra de mercado."
             ),
-            parameters={"type": "object", "properties": {}},
+            parameters={
+                "type": "object",
+                "properties": {
+                    "message_id": {
+                        "type": "string",
+                        "description": "Id del mensaje que se está analizando"
+                    }}},
         )
     ]
 )
