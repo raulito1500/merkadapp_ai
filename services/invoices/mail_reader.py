@@ -8,7 +8,8 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from shared.merkadapp_client import submit_to_merkadapp_api
+from services.invoices.agent import run_invoice_agent
+
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
 CREDENTIALS_PATH = "credentials.json"
@@ -114,15 +115,11 @@ if __name__ == "__main__":
     print(f"Encontrados {len(messages)} correos con la etiqueta facturas")
 
     primero = messages[0]
-    zip_bytes = find_zip_attachment(service, primero["id"])
-    if zip_bytes is None:
-        print("No se encontró adjunto ZIP")
-    else:
-        try:
-            xml_bytes = extract_xml_from_zip(zip_bytes)
-            bill_id = submit_to_merkadapp_api(xml_bytes)
-            print(parse_invoice_subject(get_message_headers(
-                service, primero["id"])["Subject"])["business_name"])
-            print(f"Factura creada con id {bill_id}")
-        except ValueError as e:
-            print(e)
+    headers = get_message_headers(service, primero["id"])
+    business_name = parse_invoice_subject(headers["Subject"])["business_name"]
+
+    try:
+        result = run_invoice_agent(service, primero["id"], business_name)
+        print(result)
+    except Exception as e:
+        print(e)
