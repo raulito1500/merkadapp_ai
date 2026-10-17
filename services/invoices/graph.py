@@ -21,11 +21,6 @@ class InvoiceState(TypedDict):
 
 def decide_node(state: InvoiceState) -> dict:
     prompt = (
-        f"El negocio que emitió esta factura es: {state['business_name']}. "
-        "Si es un supermercado o tienda de víveres, llama a la función "
-        "submit_invoice. Si no lo es, responde en texto explicando brevemente por qué no."
-    )
-    prompt = (
         f"El negocio que emitió la factura con id : {state['message_id']} es: {state['business_name']}. "
         "Si es un supermercado o tienda de víveres, llama a la función "
         "`submit_invoice`. Si no lo es, responde en texto explicando en no "
@@ -49,7 +44,7 @@ def decide_node(state: InvoiceState) -> dict:
         "contents": contents,
         "function_call": part.function_call,
         "final_text": response.text if part.function_call is None else None,
-        "args": part.function_call.args
+        "args": None if part.function_call is None else part.function_call.args
     }
 
 
