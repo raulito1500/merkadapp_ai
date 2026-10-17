@@ -1,3 +1,4 @@
+from google.auth.exceptions import RefreshError
 import os.path
 import base64
 import zipfile
@@ -9,6 +10,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from services.invoices.agent import run_invoice_agent
+from services.invoices.graph import invoice_graph
 
 
 SCOPES = ["https://www.googleapis.com/auth/gmail.readonly"]
@@ -23,11 +25,16 @@ def get_gmail_service():
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            try:
+                creds.refresh(Request())
+            except RefreshError:
+                creds = None
+
+        if not creds or not creds.valid:
             flow = InstalledAppFlow.from_client_secrets_file(
                 CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=0)
+
         with open(TOKEN_PATH, "w") as token_file:
             token_file.write(creds.to_json())
 
@@ -110,16 +117,27 @@ def parse_invoice_subject(subject: str) -> dict:
 
 
 if __name__ == "__main__":
-    service = get_gmail_service()
-    messages = list_invoice_messages()
-
-    target_message = messages[0]
-    headers = get_message_headers(service, target_message["id"])
-    business_name = parse_invoice_subject(headers["Subject"])["business_name"]
-
     try:
-        result = run_invoice_agent(
-            service, target_message["id"], business_name)
-        print(result)
+        service = get_gmail_service()
+        messages = list_invoice_messages()
+
+        target_message = messages[1]
+        headers = get_message_headers(service, target_message["id"])
+        business_name = parse_invoice_subject(
+            headers["Subject"])["business_name"]
+
+        # result = run_invoice_agent(
+        #     service, target_message["id"], business_name)
+        # print(result)
+        final_state = invoice_graph.invoke({
+            "service": service,
+            "message_id": target_message["id"],
+            "business_name": business_name,
+            "contents": [],
+            "function_call": None,
+            "result": None,
+            "final_text": None,
+        })
+        print(final_state["final_text"])
     except Exception as e:
         print(e)
