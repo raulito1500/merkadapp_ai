@@ -73,7 +73,6 @@ def respond_node(state: InvoiceState) -> dict:
     return {"final_text": final_response.text}
 
 
-# devuelve "execute" si hay function_call, o END si no
 def route_after_decision(state: InvoiceState) -> str:
     return END if state["function_call"] is None else "execute"
 
