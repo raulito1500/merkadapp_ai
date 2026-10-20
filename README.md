@@ -2,7 +2,7 @@
 
 Python services that add AI features to the Merkadapp ecosystem: recipe suggestions backed by a semantic cache, an agent that turns e-mailed electronic invoices into bills, an MCP server that exposes Merkadapp as tools, and household-level permissions.
 
-**Status:** early development. The layout below is the target structure; most files are still empty and get filled in phase by phase (see [Roadmap](#roadmap)).
+**Status:** in active development, built phase by phase. Recipes and the invoice agent work end to end, the MCP server has its first tool, and households and evals are still empty.
 
 Part of the Merkadapp ecosystem:
 - [merkadapp](https://github.com/raulito1500/merkadapp) — Go + MongoDB backend (bills, products, market lists)
@@ -15,10 +15,10 @@ One Python repo, several independently deployable services on Render, so each on
 
 | Service | Kind | What it does |
 |---|---|---|
-| `services/recipes` | web service | Suggests recipes. Looks for a similar saved recipe first and only calls the LLM when nothing is close enough. |
-| `services/invoices` | cron job | Reads invoice e-mails, extracts the attached XML and submits it to the Go API. |
-| `services/mcp_server` | web service | Exposes Merkadapp operations (`add_bill`, `get_market_list`, ...) as MCP tools. |
-| `services/households` | web service | Households, roles and permissions on top of Supabase Auth + Row Level Security. |
+| `services/recipes` | web service | `GET /recipes/options` proposes 3 recipes from recently bought ingredients; `POST /recipes/detail` looks for a similar saved recipe (pgvector) and only calls Gemini when nothing is close enough. |
+| `services/invoices` | cron job | Reads invoice e-mails from Gmail, lets Gemini decide via tool calling whether it's a supermarket invoice, and submits the attached XML to the Go API. Orchestrated as a LangGraph `StateGraph` (decide → execute → respond). |
+| `services/mcp_server` | local stdio server | Exposes Merkadapp operations as MCP tools; `get_bill` works from Claude Desktop. |
+| `services/households` | web service | *Not started.* Households, roles and permissions on top of Supabase Auth + Row Level Security. |
 
 Code shared by the services lives in `shared/`. It authenticates against the existing backends with a Firebase ID token, the same way the frontend does.
 
@@ -37,8 +37,9 @@ Code shared by the services lives in `shared/`. It authenticates against the exi
 shared/                  code reused by every service
   config.py              environment variables, read in one place
   firebase_auth.py       sign in and get a Firebase ID token
-  merkadapp_client.py    client for the Go and NestJS APIs
-  llm.py                 Gemini / Groq client
+  merkadapp_client.py    client for the Go API (ingredients, bills, invoice upload, market lists)
+  expenses_client.py     client for the NestJS expenses API
+  llm.py                 Gemini client
   errors.py              common error helpers
 services/
   recipes/               semantic recipe cache (FastAPI)
@@ -49,7 +50,11 @@ services/
     repository.py        Supabase / pgvector access
     service.py           search first, generate on a miss, then save
   invoices/              e-mail invoice agent
-  mcp_server/            MCP server
+    mail_reader.py       Gmail OAuth, MIME traversal, ZIP/XML extraction
+    tools.py             `submit_invoice` tool declaration
+    agent.py             tool-calling loop
+    graph.py             same flow as a LangGraph state graph
+  mcp_server/            MCP server (server.py)
   households/            users, roles, permissions
 db/migrations/           SQL files for Supabase, applied in order
 evals/                   test cases and cost/token tracking for LLM output
@@ -65,4 +70,6 @@ pip install -r requirements.txt
 cp .env.example .env    # then fill in the values
 ```
 
-Both Merkadapp backends must be running locally. Signing in needs a real Firebase Authentication account with email and password.
+Both Merkadapp backends must be running locally. Signing in needs a real Firebase Authentication account with email and password. The invoice agent also needs Gmail OAuth files (`credentials.json`, generated `token.json`; both gitignored).
+
+To try the MCP server from Claude Desktop, register `services/mcp_server/server.py` by absolute path in its config (Claude Desktop ignores `cwd`).
