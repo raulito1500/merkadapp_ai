@@ -126,9 +126,12 @@ if __name__ == "__main__":
         business_name = parse_invoice_subject(
             headers["Subject"])["business_name"]
 
+        # Calling for Agent
         # result = run_invoice_agent(
         #     service, target_message["id"], business_name)
         # print(result)
+
+        # Calling for Graph
         final_state = invoice_graph.invoke({
             "service": service,
             "message_id": target_message["id"],
@@ -139,5 +142,6 @@ if __name__ == "__main__":
             "final_text": None,
         })
         print(final_state["final_text"])
+
     except Exception as e:
         print(e)
