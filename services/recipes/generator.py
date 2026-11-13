@@ -6,13 +6,30 @@ from shared.errors import RecipeGenerationError
 from shared.config import MODEL_NAME
 from shared.llm import client
 
+
 def generate_options(recent_ingredients: str) -> list[RecipeOption]:
-    prompt = (
-        "Basado en estos productos que la persona compró recientemente: "
-        f"{recent_ingredients}. "
-        "Sugiere 3 opciones de receta distintas entre sí. Cada una debe tener "
-        "2 a 5 ingredientes clave que la hagan inconfundible frente a las otras dos."
-    )
+    meal_type = "desayuno, almuerzo, snack"
+    goal = "Mantenimiento del peso"
+    dietary_preferences = "bajo en calorias, carbohidratos para perdida de peso, alto en proteina. Cero picante"
+    culinary_style = "Latinoamericana Thai, Italiana y meditarranea."
+    prompt = f"""
+        Actúa como un chef profesional y un nutricionista experto. 
+        A partir de los siguientes datos del usuario:
+
+        - **Ingredientes disponibles:** {recent_ingredients}
+        - **Tipo de comida:** {meal_type}  
+        - **Objetivo nutricional:** {goal} 
+        - **Preferencias o restricciones dietéticas:** {dietary_preferences}  # Ej: Sin restricciones, vegetariano, alergia al maní, no me gusta el cilantro, etc.
+        - **Estilo culinario preferido (opcional):** {culinary_style}  # Ej: Comida colombiana, italiana, rápida, casera, etc.
+
+        Genera 3 opciones de recetas distintas entre sí que cumplan estrictamente con las siguientes reglas:
+        1. **Alineación nutricional y de estilo:** Deben ajustarse al objetivo, al tipo de comida y respetar las preferencias o restricciones indicadas.
+        2. **Variedad:** Las 3 opciones deben ser diferentes entre sí (evita repetir el mismo tipo de preparación).
+        3. **Ingredientes clave:** Cada receta debe destacar de 2 a 5 ingredientes clave (priorizando los ingredientes disponibles del usuario).
+        4. **Imagen:** Incluye una URL absoluta, pública y directa de una imagen real que represente fielmente el platillo (utiliza URLs estables de fuentes públicas conocidas y evita inventar enlaces).
+
+        Cada opción debe ajustarse exactamente al esquema de datos requerido.
+        """
 
     try:
         response = client.models.generate_content(

@@ -7,6 +7,7 @@ class RecipeOption(BaseModel):
     key_ingredients: list[str] = Field(min_length=2, max_length=5)
     cook_time_minutes: int
     calories_approx: int
+    photo: str
 
     def identity_text(self) -> str:
         ingredients = ", ".join(self.key_ingredients)
