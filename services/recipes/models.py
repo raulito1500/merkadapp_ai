@@ -1,13 +1,23 @@
 from pydantic import BaseModel, Field
 
 
+class RecipeOptionLLMSchema(BaseModel):
+    """What the LLM fills in: no photo URL, only a search query for it."""
+    name: str
+    description: str
+    key_ingredients: list[str] = Field(min_length=2, max_length=5)
+    cook_time_minutes: int
+    calories_approx: int
+    photo_query: str
+
+
 class RecipeOption(BaseModel):
     name: str
     description: str
     key_ingredients: list[str] = Field(min_length=2, max_length=5)
     cook_time_minutes: int
     calories_approx: int
-    photo: str
+    photo: str | None = None
 
     def identity_text(self) -> str:
         ingredients = ", ".join(self.key_ingredients)

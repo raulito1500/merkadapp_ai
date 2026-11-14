@@ -1,5 +1,8 @@
+import time
+
 from services.recipes.embeddings import embed
 from services.recipes.generator import generate_detail, generate_options
+from services.recipes.images import search_photo
 from services.recipes.models import RecipeDetail, RecipeOption
 from services.recipes.repository import find_similar_recipe, save_recipe
 from shared.errors import RecipeGenerationError
@@ -18,7 +21,19 @@ def get_options() -> list[RecipeOption]:
             "No hay productos comprados recientemente para sugerir recetas")
 
     ingredient_names = ", ".join(i["product_name"] for i in ingredients)
-    return generate_options(ingredient_names)
+    llm_options = generate_options(ingredient_names)
+    # Sequential on purpose: Brave's free plan is rate-limited (~1 req/s).
+    options = []
+    for i, llm_option in enumerate(llm_options):
+        if i > 0:
+            time.sleep(1)
+        options.append(
+            RecipeOption(
+                **llm_option.model_dump(exclude={"photo_query"}),
+                photo=search_photo(llm_option.photo_query),
+            )
+        )
+    return options
 
 
 def get_recipe_detail(option: RecipeOption) -> RecipeDetail:

@@ -1,13 +1,13 @@
 from google.genai import types
 
-from services.recipes.models import RecipeDetail, RecipeOption
+from services.recipes.models import RecipeDetail, RecipeOption, RecipeOptionLLMSchema
 from shared.errors import RecipeGenerationError
 
 from shared.config import MODEL_NAME
 from shared.llm import client
 
 
-def generate_options(recent_ingredients: str) -> list[RecipeOption]:
+def generate_options(recent_ingredients: str) -> list[RecipeOptionLLMSchema]:
     meal_type = "desayuno, almuerzo, snack"
     goal = "Mantenimiento del peso"
     dietary_preferences = "bajo en calorias, carbohidratos para perdida de peso, alto en proteina. Cero picante"
@@ -26,7 +26,7 @@ def generate_options(recent_ingredients: str) -> list[RecipeOption]:
         1. **Alineación nutricional y de estilo:** Deben ajustarse al objetivo, al tipo de comida y respetar las preferencias o restricciones indicadas.
         2. **Variedad:** Las 3 opciones deben ser diferentes entre sí (evita repetir el mismo tipo de preparación).
         3. **Ingredientes clave:** Cada receta debe destacar de 2 a 5 ingredientes clave (priorizando los ingredientes disponibles del usuario).
-        4. **Imagen:** Incluye una URL absoluta, pública y directa de una imagen real que represente fielmente el platillo (utiliza URLs estables de fuentes públicas conocidas y evita inventar enlaces).
+        4. **Imagen:** En `photo_query` incluye una frase corta de búsqueda EN INGLÉS que nombre el platillo específico (por ejemplo "grilled chicken quinoa bowl"). No incluyas URLs.
 
         Cada opción debe ajustarse exactamente al esquema de datos requerido.
         """
@@ -37,7 +37,7 @@ def generate_options(recent_ingredients: str) -> list[RecipeOption]:
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
-                response_schema=list[RecipeOption],
+                response_schema=list[RecipeOptionLLMSchema],
             ),
         )
     except Exception as e:
