@@ -1,13 +1,13 @@
 import psycopg
 from pgvector.psycopg import register_vector
 
-from shared.config import SUPABASE_URL
+from shared.config import SUPABASE_DATABASE_URL
 from services.recipes.models import Ingredient, Nutrition, RecipeDetail
 from services.recipes.embeddings import embed
 
 
 def save_recipe(detail: RecipeDetail, embedding: list[float]) -> str:
-    with psycopg.connect(SUPABASE_URL) as conn:
+    with psycopg.connect(SUPABASE_DATABASE_URL) as conn:
         register_vector(conn)
         with conn.cursor() as cur:
             cur.execute(
@@ -28,7 +28,7 @@ def save_recipe(detail: RecipeDetail, embedding: list[float]) -> str:
 
 def find_similar_recipe(query_text: str, threshold: float = 0.80) -> RecipeDetail | None:
     query_embedding = embed(query_text)
-    with psycopg.connect(SUPABASE_URL) as conn:
+    with psycopg.connect(SUPABASE_DATABASE_URL) as conn:
         register_vector(conn)
         with conn.cursor() as cur:
             cur.execute(

@@ -4,6 +4,7 @@ FIREBASE_SIGN_IN_URL = (
     "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
 )
 
+
 def get_firebase_token(email: str, password: str, api_key: str) -> str:
     response = httpx.post(
         FIREBASE_SIGN_IN_URL,
